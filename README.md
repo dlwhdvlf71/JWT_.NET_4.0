@@ -1,2 +1,2 @@
-# JWT_.NET_4.0
+# JWT DOT NET 4.0 Version
 JWT ASP.NET 4.0 Version
