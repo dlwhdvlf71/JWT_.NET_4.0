@@ -55,9 +55,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="JWT.cs" />
-    <Compile Include="Header.cs" />
     <Compile Include="IJWT.cs" />
-    <Compile Include="Payload.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

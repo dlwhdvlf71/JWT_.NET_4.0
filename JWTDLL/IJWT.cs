@@ -1,4 +1,7 @@
-﻿namespace JWTDLL
+﻿using Newtonsoft.Json.Linq;
+using Jose;
+
+namespace JWTDLL
 {
     internal interface IJWT
     {
@@ -12,6 +15,12 @@
 
         string Base64UrlDecoding(string input);
 
-        string CreateToken(Header header, Payload payload);
+        string CreateToken(JObject header, JObject payload, JwsAlgorithm algorithm);
+
+        string CreateToken(JObject header, JObject payload, object key, JwsAlgorithm algorithm);
+
+        string DecodeToken(string token, object key = null);
+
+        string DecodeToken(string token, object key, JwsAlgorithm algorithm);
     }
 }

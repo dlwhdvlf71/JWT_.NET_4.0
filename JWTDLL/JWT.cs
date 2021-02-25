@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
+using Jose;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Org.BouncyCastle.Security;
 
 namespace JWTDLL
@@ -138,38 +140,120 @@ namespace JWTDLL
 
         #endregion LoadKey : PEM 파일 RSA 형식 변환
 
-        public string CreateToken(Header header, Payload payload)
+        public string CreateToken(JObject header, JObject payload, JwsAlgorithm algorithm)
         {
             try
             {
-                byte[] headerBytes = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(header, Formatting.None));
-                byte[] payloadBytes = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(payload, Formatting.None));
+                if (header.Count <= 0)
+                {
+                    throw new Exception("Header is NULL");
+                }
+
+                if (payload.Count <= 0)
+                {
+                    throw new Exception("Payload is NULL");
+                }
+
+                if (algorithm.Equals(null))
+                {
+                    throw new Exception("JwsAlgorithm is NULL");
+                }
+
+                if (string.IsNullOrEmpty(filePath))
+                {
+                    throw new Exception("FilePath is NULL then Check JWT.filePath Variable");
+                }
+
+                RSACryptoServiceProvider rsa = LoadKey(filePath);
+
+                return CreateToken(header, payload, rsa, algorithm);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+        }
+
+        public string CreateToken(JObject header, JObject payload, object key, JwsAlgorithm algorithm)
+        {
+            try
+            {
+                if (header.Count <= 0)
+                {
+                    throw new Exception("Header is NULL");
+                }
+
+                if (payload.Count <= 0)
+                {
+                    throw new Exception("Payload is NULL");
+                }
+
+                if (algorithm.Equals(null))
+                {
+                    throw new Exception("JwsAlgorithm is NULL");
+                }
+
+                if (key == null)
+                {
+                    throw new Exception("key is null");
+                }
+
+                byte[] headerBytes = Encoding.UTF8.GetBytes(header.ToString());
+                byte[] payloadBytes = Encoding.UTF8.GetBytes(payload.ToString());
 
                 List<string> segments = new List<string>();
 
                 segments.Add(Base64UrlEncoding(headerBytes));
                 segments.Add(Base64UrlEncoding(payloadBytes));
+
                 string stringToSign = string.Join(".", segments.ToArray());
 
                 byte[] signBytes = Encoding.UTF8.GetBytes(stringToSign);
 
                 #region 토큰 발행
 
-                RSACryptoServiceProvider rsa = LoadKey(filePath);
-
                 string headerJson = JsonConvert.SerializeObject(header, Formatting.None);
                 string payloadJson = JsonConvert.SerializeObject(payload, Formatting.None);
 
-                var dicHeader = JsonConvert.DeserializeObject<Dictionary<string, Object>>(headerJson);
-                var dicPayload = JsonConvert.DeserializeObject<Dictionary<string, Object>>(payloadJson);
+                var dicHeader = JsonConvert.DeserializeObject<Dictionary<string, Object>>(header.ToString());
+                var dicPayload = JsonConvert.DeserializeObject<Dictionary<string, Object>>(payload.ToString());
 
-                string token = Jose.JWT.Encode(dicPayload, rsa, Jose.JwsAlgorithm.RS256, extraHeaders: dicHeader);
+                string token = Jose.JWT.Encode(dicPayload, key, algorithm, extraHeaders: dicHeader);
 
                 //string decodeToken = Jose.JWT.Decode(token, rsa);
 
                 #endregion 토큰 발행
 
                 return Base64Encoding(token);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+        }
+
+        public string DecodeToken(string token, object key = null)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(token))
+                {
+                    throw new Exception("token is null");
+                }
+
+                return Jose.JWT.Decode(token, key);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+        }
+
+        public string DecodeToken(string token, object key, JwsAlgorithm algorithm)
+        {
+            try
+            {
+                return Jose.JWT.Decode(token, key, algorithm);
             }
             catch (Exception ex)
             {
