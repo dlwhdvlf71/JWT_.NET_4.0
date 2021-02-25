@@ -1,5 +1,5 @@
-﻿using Newtonsoft.Json.Linq;
-using Jose;
+﻿using Jose;
+using Newtonsoft.Json.Linq;
 
 namespace JWTDLL
 {
