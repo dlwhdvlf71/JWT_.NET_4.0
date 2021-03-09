@@ -1,5 +1,6 @@
 ﻿using Jose;
 using Newtonsoft.Json.Linq;
+using System.Security.Cryptography;
 
 namespace JWTDLL
 {
@@ -15,7 +16,7 @@ namespace JWTDLL
 
         string Base64UrlDecoding(string input);
 
-        string CreateToken(JObject header, JObject payload, JwsAlgorithm algorithm);
+        string CreateToken(JObject header, JObject payload, JwsAlgorithm algorithm, RSACryptoServiceProvider rsp);
 
         string CreateToken(JObject header, JObject payload, object key, JwsAlgorithm algorithm);
 

@@ -6,6 +6,9 @@ using System.Text;
 using Jose;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Org.BouncyCastle.Crypto;
+using Org.BouncyCastle.Crypto.Parameters;
+using Org.BouncyCastle.OpenSsl;
 using Org.BouncyCastle.Security;
 
 namespace JWTDLL
@@ -125,7 +128,7 @@ namespace JWTDLL
 
         #region LoadKey : PEM 파일 RSA 형식 변환
 
-        private RSACryptoServiceProvider LoadKey(string keyFilePath)
+        public RSACryptoServiceProvider LoadKeyPath(string keyFilePath)
         {
             Org.BouncyCastle.OpenSsl.PemReader pem = new Org.BouncyCastle.OpenSsl.PemReader(File.OpenText(keyFilePath));
             Org.BouncyCastle.Crypto.AsymmetricCipherKeyPair rsaParameters = pem.ReadObject() as Org.BouncyCastle.Crypto.AsymmetricCipherKeyPair;
@@ -138,9 +141,27 @@ namespace JWTDLL
             return rsa;
         }
 
+        public RSACryptoServiceProvider LoadKeyString(string keyString)
+        {
+            byte[] byteArray = Encoding.UTF8.GetBytes(keyString);
+            MemoryStream ms = new MemoryStream(byteArray);
+
+            StreamReader sr = new StreamReader(ms);
+
+            PemReader pr = new PemReader(sr);
+
+            AsymmetricCipherKeyPair keyPair = (AsymmetricCipherKeyPair)pr.ReadObject();
+            RSAParameters rsaParams = DotNetUtilities.ToRSAParameters((RsaPrivateCrtKeyParameters)keyPair.Private);
+
+            RSACryptoServiceProvider csp = new RSACryptoServiceProvider();
+            csp.ImportParameters(rsaParams);
+
+            return csp;
+        }
+
         #endregion LoadKey : PEM 파일 RSA 형식 변환
 
-        public string CreateToken(JObject header, JObject payload, JwsAlgorithm algorithm)
+        public string CreateToken(JObject header, JObject payload, JwsAlgorithm algorithm, RSACryptoServiceProvider rsp)
         {
             try
             {
@@ -164,7 +185,7 @@ namespace JWTDLL
                     throw new Exception("FilePath is NULL then Check JWT.filePath Variable");
                 }
 
-                RSACryptoServiceProvider rsa = LoadKey(filePath);
+                RSACryptoServiceProvider rsa = rsp;
 
                 return CreateToken(header, payload, rsa, algorithm);
             }
